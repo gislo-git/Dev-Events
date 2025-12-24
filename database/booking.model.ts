@@ -24,7 +24,8 @@ const bookingSchema = new Schema<BookingDocument, BookingModel>(
       type: Schema.Types.ObjectId,
       ref: 'Event',
       required: true,
-      index: true, // Index for faster lookups by event.
+      unique: true, // Enforce at most one booking per event.
+      index: true,
     },
     email: {
       type: String,
@@ -43,12 +44,13 @@ const bookingSchema = new Schema<BookingDocument, BookingModel>(
   }
 );
 
-// Explicit index on eventId (redundant with field-level index but safe & explicit).
-bookingSchema.index({ eventId: 1 });
+// Explicit unique index on eventId so each event can only have a single booking document.
+bookingSchema.index({ eventId: 1 }, { unique: true });
 
 /**
  * Pre-save hook to validate references and field format:
  * - Ensures the referenced Event exists before creating a booking.
+ * - Guards against duplicate bookings for the same event at application level.
  */
 bookingSchema.pre<BookingDocument>('save', async function preSave(next) {
   try {
@@ -62,6 +64,14 @@ bookingSchema.pre<BookingDocument>('save', async function preSave(next) {
 
     if (!eventExists) {
       throw new Error('Cannot create booking: referenced event does not exist');
+    }
+
+    // If this is a new booking, ensure no other booking already exists for this event.
+    if (this.isNew) {
+      const duplicate = await Booking.exists({ eventId: this.eventId }).lean();
+      if (duplicate) {
+        throw new Error('A booking for this event already exists');
+      }
     }
 
     next();
