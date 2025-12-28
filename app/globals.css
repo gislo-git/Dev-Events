@@ -140,7 +140,7 @@
     }
 
     #explore-btn {
-        @apply border-dark-200 bg-dark-100 flex w-fit cursor-pointer  rounded-full border px-8 py-3.5 max-sm:w-full text-center;
+        @apply border-dark-200 bg-dark-100 flex w-fit cursor-pointer hover:scale-105  rounded-full border px-8 py-3.5 max-sm:w-full text-center;
 
         a {
             @apply flex-center gap-2 text-center w-full;
@@ -172,10 +172,10 @@
     }
 
     #event-card {
-        @apply flex flex-col gap-3;
+        @apply flex flex-col gap-3 hover:scale-105 ;
 
         .poster {
-            @apply h-[300px] w-full rounded-lg object-cover;
+            @apply h-[300px] w-full rounded-lg object-cover ;
         }
 
         .title {
