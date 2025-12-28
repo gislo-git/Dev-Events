@@ -27,12 +27,6 @@ const globalWithMongoose = global as typeof global & {
 
 const MONGODB_URI: string | undefined = process.env.MONGODB_URI;
 
-if (!MONGODB_URI) {
-  // Fail fast if the connection string is missing; this should be configured
-  // through environment variables in all environments.
-  throw new Error('Please define the MONGODB_URI environment variable');
-}
-
 // Initialize the cache on the global object if it does not exist yet.
 const cached: MongooseGlobalCache = globalWithMongoose.mongoose ?? {
   conn: null,
@@ -48,6 +42,12 @@ globalWithMongoose.mongoose = cached;
  * application (API routes, server components, server actions, etc.).
  */
 export async function connectToDatabase(): Promise<Connection> {
+  // Validate the connection string at connection time instead of module load
+  // so importing this module does not crash builds where the DB is unused.
+  if (!MONGODB_URI) {
+    throw new Error('MONGODB_URI environment variable is not defined');
+  }
+
   // If a connection already exists, reuse it.
   if (cached.conn) {
     return cached.conn;
@@ -69,8 +69,15 @@ export async function connectToDatabase(): Promise<Connection> {
       .then((m: Mongoose) => m.connection);
   }
 
-  cached.conn = await cached.promise;
-  return cached.conn;
+  try {
+    cached.conn = await cached.promise;
+    return cached.conn;
+  } catch (error) {
+    // If the connection attempt fails, clear the cached promise so that
+    // subsequent calls can retry establishing a new connection.
+    cached.promise = null;
+    throw error;
+  }
 }
 
 /**

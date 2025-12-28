@@ -135,14 +135,40 @@ eventSchema.index({ slug: 1 }, { unique: true });
 
 /**
  * Pre-save hook to:
- * - Generate a URL-friendly slug from the title (only when the title changes).
+ * - Generate a URL-friendly, unique slug from the title (only when the title changes).
  * - Normalize and validate date/time fields.
  * - Validate that all required fields are non-empty.
  */
-eventSchema.pre<EventDocument>('save', function preSave(next) {
+eventSchema.pre<EventDocument>('save', async function preSave(next) {
   try {
+    // Only touch the slug when the title changes or slug is missing.
     if (this.isModified('title') || !this.slug) {
-      this.slug = slugify(this.title);
+      const baseSlug = slugify(this.title);
+      const maxAttempts = 5;
+      let attempt = 0;
+      let candidate = baseSlug;
+
+      // Ensure slug uniqueness by checking for existing documents with the same slug.
+      while (attempt < maxAttempts) {
+        const existing = await (this.constructor as EventModel).exists({
+          slug: candidate,
+          _id: { $ne: this._id }, // Ignore the current document when updating.
+        });
+
+        if (!existing) {
+          this.slug = candidate;
+          break;
+        }
+
+        // On collision, append a short random suffix and retry.
+        const suffix = Math.random().toString(36).slice(2, 8); // 4–6 chars.
+        candidate = `${baseSlug}-${suffix}`;
+        attempt += 1;
+      }
+
+      if (!this.slug) {
+        throw new Error('Unable to generate a unique slug for Event after multiple attempts');
+      }
     }
 
     if (this.isModified('date')) {
