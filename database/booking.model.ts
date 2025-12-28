@@ -9,7 +9,12 @@ export interface BookingDocument extends Document {
   updatedAt: Date;
 }
 
-// Basic email validator. For stricter rules, replace with a dedicated validator.
+/**
+ * Checks whether a string is a syntactically valid email address using a simple regular expression.
+ *
+ * @param email - The email address to validate
+ * @returns `true` if the string is a valid email address, `false` otherwise.
+ */
 function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }

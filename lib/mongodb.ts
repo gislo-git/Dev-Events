@@ -48,11 +48,11 @@ if (!global._mongoose) {
 }
 
 /**
- * Establishes (or reuses) a connection to MongoDB using Mongoose.
+ * Establishes or reuses a cached Mongoose connection to the MongoDB URI specified in the environment.
  *
- * This function can be safely called from API routes, route handlers, or
- * server components. In development, the connection is cached on the global
- * object to prevent creating multiple connections across hot reloads.
+ * Reuses an existing active connection or an in-progress connection promise stored on the global cache to avoid creating duplicate connections across imports or hot reloads.
+ *
+ * @returns The connected Mongoose instance
  */
 export async function connectToDatabase(): Promise<typeof mongoose> {
   // If we already have an active connection, reuse it.

@@ -20,7 +20,12 @@ export interface EventDocument extends Document {
   updatedAt: Date;
 }
 
-// Helper to generate a URL-safe slug from a title.
+/**
+ * Create a URL-safe slug from a title.
+ *
+ * @param title - The input title to convert into a slug
+ * @returns The resulting slug: lowercase, hyphen-separated, containing only letters, numbers, and hyphens
+ */
 function generateSlug(title: string): string {
   return title
     .toLowerCase()
@@ -30,7 +35,12 @@ function generateSlug(title: string): string {
     .replace(/-+/g, '-'); // Collapse multiple dashes.
 }
 
-// Basic non-empty string validator for required string fields.
+/**
+ * Checks whether a value is a non-empty string.
+ *
+ * @param value - The value to test
+ * @returns `true` if `value` is a string containing at least one non-whitespace character, `false` otherwise
+ */
 function isNonEmptyString(value: unknown): boolean {
   return typeof value === 'string' && value.trim().length > 0;
 }
