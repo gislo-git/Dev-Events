@@ -139,52 +139,46 @@ eventSchema.index({ slug: 1 }, { unique: true });
  * - Normalize and validate date/time fields.
  * - Validate that all required fields are non-empty.
  */
-eventSchema.pre<EventDocument>('save', async function preSave(next) {
-  try {
-    // Only touch the slug when the title changes or slug is missing.
-    if (this.isModified('title') || !this.slug) {
-      const baseSlug = slugify(this.title);
-      const maxAttempts = 5;
-      let attempt = 0;
-      let candidate = baseSlug;
+eventSchema.pre<EventDocument>('save', async function preSave(this: EventDocument) {
+  // Only touch the slug when the title changes or slug is missing.
+  if (this.isModified('title') || !this.slug) {
+    const baseSlug = slugify(this.title);
+    const maxAttempts = 5;
+    let attempt = 0;
+    let candidate = baseSlug;
 
-      // Ensure slug uniqueness by checking for existing documents with the same slug.
-      while (attempt < maxAttempts) {
-        const existing = await (this.constructor as EventModel).exists({
-          slug: candidate,
-          _id: { $ne: this._id }, // Ignore the current document when updating.
-        });
+    // Ensure slug uniqueness by checking for existing documents with the same slug.
+    while (attempt < maxAttempts) {
+      const existing = await (this.constructor as EventModel).exists({
+        slug: candidate,
+        _id: { $ne: this._id }, // Ignore the current document when updating.
+      });
 
-        if (!existing) {
-          this.slug = candidate;
-          break;
-        }
-
-        // On collision, append a short random suffix and retry.
-        const suffix = Math.random().toString(36).slice(2, 8); // 4–6 chars.
-        candidate = `${baseSlug}-${suffix}`;
-        attempt += 1;
+      if (!existing) {
+        this.slug = candidate;
+        break;
       }
 
-      if (!this.slug) {
-        throw new Error('Unable to generate a unique slug for Event after multiple attempts');
-      }
+      // On collision, append a short random suffix and retry.
+      const suffix = Math.random().toString(36).slice(2, 8); // 4–6 chars.
+      candidate = `${baseSlug}-${suffix}`;
+      attempt += 1;
     }
 
-    if (this.isModified('date')) {
-      this.date = normalizeDate(this.date);
+    if (!this.slug) {
+      throw new Error('Unable to generate a unique slug for Event after multiple attempts');
     }
-
-    if (this.isModified('time')) {
-      this.time = normalizeTime(this.time);
-    }
-
-    validateRequiredFields(this);
-
-    next();
-  } catch (err) {
-    next(err as Error);
   }
+
+  if (this.isModified('date')) {
+    this.date = normalizeDate(this.date);
+  }
+
+  if (this.isModified('time')) {
+    this.time = normalizeTime(this.time);
+  }
+
+  validateRequiredFields(this);
 });
 
 // Prevent model recompilation issues in development / hot-reload.
