@@ -146,6 +146,7 @@ eventSchema.pre<EventDocument>('save', async function preSave(this: EventDocumen
     const maxAttempts = 5;
     let attempt = 0;
     let candidate = baseSlug;
+    let foundUnique = false;
 
     // Ensure slug uniqueness by checking for existing documents with the same slug.
     while (attempt < maxAttempts) {
@@ -156,6 +157,7 @@ eventSchema.pre<EventDocument>('save', async function preSave(this: EventDocumen
 
       if (!existing) {
         this.slug = candidate;
+        foundUnique = true;
         break;
       }
 
@@ -165,7 +167,7 @@ eventSchema.pre<EventDocument>('save', async function preSave(this: EventDocumen
       attempt += 1;
     }
 
-    if (!this.slug) {
+    if (!foundUnique) {
       throw new Error('Unable to generate a unique slug for Event after multiple attempts');
     }
   }
