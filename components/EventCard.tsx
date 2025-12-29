@@ -1,15 +1,16 @@
+import { EventAttrs } from "@/database/event.model";
 import Image from "next/image";
 import Link from "next/link";
 
-interface Props{
-    title:string;
-    image:string;
-    slug:string;
-    location:string;
-    date:string;
-    time:string;
-}
-const EventCard = ({title,image, slug,location, date, time}:Props) => {
+// interface Props{
+//     title:string;
+//     image:string;
+//     slug:string;
+//     location:string;
+//     date:string;
+//     time:string;
+// }
+const EventCard = ({title,image, slug,location, date, time}:EventAttrs) => {
   return (
     <Link href={`/events/${slug}`} id='event-card'>
 
